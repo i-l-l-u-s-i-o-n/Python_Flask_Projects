@@ -1,0 +1,48 @@
+{% extends 'base.html'%}
+
+{% block title %}URL Shortener{%endblock%}
+
+{% block main %}
+
+<h1>URL Shortener</h1>
+
+<form action="your-url" method="POST">
+    <label for="url">Website URL: </label>
+    <input type="url" name="url" , value="" required>
+    <br>
+    <label for="code">Short Name: </label>
+    <input type="text" name="code" , value="" required>
+    <br>
+    <input type="submit" , value="Shorten">
+</form>
+
+
+
+<form action="your-url" method="POST" enctype="multipart/form-data">
+    <label for="url">File: </label>
+    <input type="file" name="file" , value="" required>
+    <br>
+    <label for="code">Short Name: </label>
+    <input type="text" name="code" , value="" required>
+    <br>
+    <input type="submit" , value="Shorten">
+</form>
+
+
+
+{%  if codes %}
+
+<h2>Codes you've created </h2>
+
+{% for k,v in codes.items() %}
+
+<ul>
+    <a href="{{ url_for('urlshort.redirect_to_url',code=k)}}">
+        <li>{{k }} : {{ v }}</li>
+    </a>
+</ul>
+{% endfor %}
+{% endif %}
+
+
+{% endblock %}

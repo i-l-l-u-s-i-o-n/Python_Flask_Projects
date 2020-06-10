@@ -17,7 +17,7 @@ class User(db.Document):
         return check_password_hash(self.password, password)
 
 class Course(db.Document):
-    course_id =     db.StringField(max_length=10,unique=True) 
+    courseID =     db.StringField(max_length=10,unique=True) 
     title = db.StringField(max_length=100)
     description = db.StringField(max_length=255)
     credits = db.IntField()
@@ -26,5 +26,5 @@ class Course(db.Document):
 
 # This is like many to many relationship. 1 student can enroll to many subjects and 1 subject or course can be enrolled by many students
 class Enrollment(db.Document):
-    course_id =     db.StringField(max_length=10,unique=True) 
+    courseID =     db.StringField(max_length=10) 
     user_id = db.IntField()

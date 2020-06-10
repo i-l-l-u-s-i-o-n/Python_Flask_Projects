@@ -26,11 +26,11 @@ def login():
     # Validation
     if form.validate_on_submit():
         if request.form['email'] =='shivam@uta.com':
-            flash("You are successfully logged in!")
+            flash("You are successfully logged in!","success")
             return redirect(url_for('index'))
         else:
-            flash("You're not registered")
-    return render_template('login.html',tiile="Login", form=form, login=True)
+            flash("You're not registered!","danger")
+    return render_template('login.html',title="Login", form=form, login=True)
 
 
 @app.route('/courses')

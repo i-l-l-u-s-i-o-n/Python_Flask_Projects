@@ -1,7 +1,12 @@
-from application import app
+from application import app,db
 
-from flask import render_template, request, json, Response
+from flask import render_template, request, json, Response, redirect ,flash, url_for
 
+# Importing data models 
+from application.models import User,Course,Enrollment
+
+# Importing forms
+from application.forms import LoginForm , RegistrationForm
 courseData = [{"courseID": "1111", "title": "PHP 101", "description": "Intro to PHP", "credits": 3, "term": "Fall, Spring"}, {"courseID": "2222", "title": "Java 1", "description": "Intro to Java Programming", "credits": 4, "term": "Spring"}, {"courseID": "3333", "title": "Adv PHP 201",
                                                                                                                                                                                                                                                    "description": "Advanced PHP Programming", "credits": 3, "term": "Fall"}, {"courseID": "4444", "title": "Angular 1", "description": "Intro to Angular", "credits": 3, "term": "Fall, Spring"}, {"courseID": "5555", "title": "Java 2", "description": "Advanced Java Programming", "credits": 4, "term": "Fall"}]
 
@@ -13,9 +18,19 @@ def index():
     return render_template('index.html', index=True)
 
 
-@app.route('/login')
+@app.route('/login',methods=['GET','POST'])
 def login():
-    return render_template('login.html', login=True)
+
+    form = LoginForm()
+
+    # Validation
+    if form.validate_on_submit():
+        if request.form['email'] =='shivam@uta.com':
+            flash("You are successfully logged in!")
+            return redirect(url_for('index'))
+        else:
+            flash("You're not registered")
+    return render_template('login.html',tiile="Login", form=form, login=True)
 
 
 @app.route('/courses')
@@ -51,3 +66,15 @@ def api(id_index=None):
     else:
         data = courseData[int(id_index)]
     return Response(json.dumps(data), mimetype='application/json')
+
+
+
+
+@app.route('/user')
+def user():
+   
+    # User(user_id=1,first_name="Shivam",last_name="Shukla",email="shivam@uta.com",password="1234abc").save()
+
+    users = User.objects.all()
+
+    return render_template('user.html',users=users)

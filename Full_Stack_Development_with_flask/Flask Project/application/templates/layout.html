@@ -17,6 +17,19 @@
     <div class="container">
         {% include "includes/nav.html" %}
 
+
+        {%for messages in get_flashed_messages()%}
+
+        {% if message %}
+
+        <div class="alert alert-danger">
+            <p>{{message}}</p>
+        </div>
+
+        {%endif%}
+
+        {%endfor%}
+
         {% block content%}
 
 

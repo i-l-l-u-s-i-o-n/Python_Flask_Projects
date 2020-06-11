@@ -1,14 +1,68 @@
-from application import app, db
+from application import app, db, api
 
-from flask import render_template, request, json, Response, redirect, flash, url_for, session
+from flask import render_template, request, json, Response, redirect, flash, url_for, session, jsonify
 
 # Importing data models
 from application.models import User, Course, Enrollment
 
 # Importing forms
 from application.forms import LoginForm, RegistrationForm
+
+from flask_restplus import Resource
+
+from application.courses_aggregate_list import course_list
+
 courseData = [{"courseID": "1111", "title": "PHP 101", "description": "Intro to PHP", "credits": 3, "term": "Fall, Spring"}, {"courseID": "2222", "title": "Java 1", "description": "Intro to Java Programming", "credits": 4, "term": "Spring"}, {"courseID": "3333", "title": "Adv PHP 201",
                                                                                                                                                                                                                                                    "description": "Advanced PHP Programming", "credits": 3, "term": "Fall"}, {"courseID": "4444", "title": "Angular 1", "description": "Intro to Angular", "credits": 3, "term": "Fall, Spring"}, {"courseID": "5555", "title": "Java 2", "description": "Advanced Java Programming", "credits": 4, "term": "Fall"}]
+
+
+###################### API ######################
+# Performing CRUD operations( create(post), read(get), update(put) , delete(delete))
+
+@api.route('/api', '/api/')
+class GetAndPost(Resource):
+
+    # get all users
+    def get(self):
+        return jsonify(User.objects.all())
+
+    # Adding user to database using post request
+    def post(self):
+        data = api.payload  # Getting data from postman
+        user = User(user_id=data['user_id'], email=data['email'],
+                    first_name=data['first_name'], last_name=data['last_name'])
+        user.set_password(data['password'])  # Saving password after hashing
+        user.save()
+        return jsonify(User.objects(user_id=data['user_id']))
+
+
+@api.route('/api/<idx>')
+class GetUpdateDelete(Resource):
+
+    # get one user
+    def get(self, idx):
+        return jsonify(User.objects(user_id=idx))
+
+    # Updating existing user using put method
+    def put(self, idx):
+
+        # Getting updated user details entered as raw json body.
+        data = api.payload
+        # ** are used for packing and unpacking in python. SO it automatically unpacks the data and updates it
+        User.objects(user_id=idx).update(**data)
+
+        return jsonify(User.objects(user_id=idx))
+
+    # deleting user using delete method
+    def delete(self,idx):
+
+        User.objects(user_id = idx).delete()
+
+        return jsonify("User is deleted!")
+
+
+
+##################################################
 
 
 @app.route('/')
@@ -36,8 +90,6 @@ def login():
 
         user = User.objects(email=email).first()
 
-
-
         # Checking if user is registered or not and if password matched or not
         if user and user.get_password(password):
             flash(f"{user.first_name} You are successfully logged in!", "success")
@@ -59,12 +111,9 @@ def logout():
     session['user_id'] = False
 
     # Instead of setting value to false, we can also pop that value.
-    session.pop('username',None)
+    session.pop('username', None)
 
     return redirect(url_for('index'))
-
-
-
 
 
 @app.route('/courses')
@@ -117,7 +166,6 @@ def enrollment():
     if not session.get('username'):
         return redirect(url_for('login'))
 
-
     data = {}
     data['courseID'] = request.form.get('courseID')
     # We can access POST form data using request.form.get('name') OR request.form['name'] ,
@@ -141,53 +189,18 @@ def enrollment():
             Enrollment(user_id=user_id, courseID=data['courseID']).save()
             flash(
                 f"Congratulations! You are enrolled in {data['courseTitle']}.", "success")
-    classes = list(User.objects.aggregate(*[
-        {
-            '$lookup': {    # Performs left outer join
-                'from': 'enrollment',
-                'localField': 'user_id',
-                'foreignField': 'user_id',
-                'as': 'r1'
-            }
-        }, {
-            '$unwind': {    # converts the array r1 to the object notation
-                'path': '$r1',
-                'includeArrayIndex': 'r1_id',
-                'preserveNullAndEmptyArrays': False
-            }
-        }, {
-            '$lookup': {  # Again finding the course details returned from the join of user and enrollment
-                'from': 'course',
-                'localField': 'r1.courseID',
-                'foreignField': 'courseID',
-                'as': 'r2'
-            }
-        }, {
-            '$unwind': {
-                'path': '$r2',
-                'preserveNullAndEmptyArrays': False
-            }
-        }, {
-            '$match': {
-                'user_id': user_id  # Getting the courses to which the current user enrolled
-            }
-        }, {
-            '$sort': {
-                'courseID': 1  # +1 means ascending and -1 means descending
-            }
-        }
-    ]))
+    classes = course_list(user_id)
     return render_template('enrollment.html', enrollment=True, title="Enrollment", classes=classes)
 
 
-@app.route('/api')
-@app.route('/api/<id_index>')
-def api(id_index=None):
-    if id_index == None:
-        data = courseData
-    else:
-        data = courseData[int(id_index)]
-    return Response(json.dumps(data), mimetype='application/json')
+# @app.route('/api')
+# @app.route('/api/<id_index>')
+# def api(id_index=None):
+#     if id_index == None:
+#         data = courseData
+#     else:
+#         data = courseData[int(id_index)]
+#     return Response(json.dumps(data), mimetype='application/json')
 
 
 @app.route('/user')
